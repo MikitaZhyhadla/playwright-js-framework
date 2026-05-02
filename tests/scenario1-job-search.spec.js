@@ -8,7 +8,7 @@ const JobSearchPage = require('../pages/JobSearchPage');
 const JobDetailsPage = require('../pages/JobDetailsPage');
 const SavedJobsPage = require('../pages/SavedJobsPage');
 
-test('Scenario 1: IKEA job search and save workflow', async ({ page }) => {
+test('Scenario 1: Search for a job', async ({ page }) => {
   const logger = new Logger();
   const cookieHelper = new CookieHelper(page, logger);
   const homePage = new HomePage(page, logger);
@@ -19,62 +19,75 @@ test('Scenario 1: IKEA job search and save workflow', async ({ page }) => {
 
   let activeKeyword = jobData.primaryKeyword;
 
-  logger.logStep('Open IKEA home page');
+  logger.logStep('Step 1: Open the IKEA website');
   await homePage.open(jobData.homeUrl);
   await cookieHelper.acceptCookies();
 
-  logger.logStep('Click the Jobs navigation tab');
+  logger.logStep("Step 2: Click on 'Jobs' tab");
   await homePage.clickJobsTab();
+  await cookieHelper.acceptCookies();
 
-  logger.logStep('Click Explore available jobs');
+  logger.logStep("Step 3: Click on 'Explore available jobs'");
   await jobsLandingPage.clickExploreJobs();
   await cookieHelper.acceptCookies();
 
-  logger.logStep(`Search for jobs using primary keyword: ${activeKeyword}`);
-  await jobSearchPage.searchJobs(activeKeyword);
+  logger.logStep(`Step 4: Input '${activeKeyword}' in Search field and leave postcode empty`);
+  await jobSearchPage.fillKeyword(activeKeyword);
+  await jobSearchPage.clearLocation();
+
+  logger.logStep("Step 5: Click on 'Search jobs' button");
+  await jobSearchPage.clickSearch();
   await cookieHelper.acceptCookies();
 
+  logger.logStep('Step 6: If search returns 0 jobs — go back and search for fallback keyword');
   if (await jobSearchPage.hasNoResults()) {
-    logger.logAction(`No results for ${activeKeyword}, navigating back and searching fallback keyword`);
+    logger.logAction(`No results for '${activeKeyword}' — going back and retrying with '${jobData.fallbackKeyword}'`);
     activeKeyword = jobData.fallbackKeyword;
     await page.goBack();
     await page.waitForLoadState('domcontentloaded');
     await cookieHelper.acceptCookies();
-    await jobSearchPage.searchJobs(activeKeyword);
+    await jobSearchPage.fillKeyword(activeKeyword);
+    await jobSearchPage.clearLocation();
+    await jobSearchPage.clickSearch();
     await cookieHelper.acceptCookies();
+  } else {
+    logger.logAction(`Search returned results for '${activeKeyword}' — no fallback needed`);
   }
 
-  logger.logStep('Click the first job in the search results');
+  logger.logStep('Step 7: Click on the first job in the list');
   await jobSearchPage.clickFirstJob();
 
+  logger.logStep(`Step 8: Check that partial job title contains '${activeKeyword}'`);
   try {
     const title = (await jobDetailsPage.getJobTitle()).trim();
-    logger.logAssertion(`Assert job title contains ${activeKeyword}`);
+    logger.logAssertion(`Assert job title contains '${activeKeyword}'`);
     expect(title).toContain(activeKeyword);
   } catch (error) {
     logger.error(`Job title assertion failed: ${error.message}`);
     throw error;
   }
 
-  logger.logStep('Save the job');
+  logger.logStep("Step 9: Click on 'Save' button");
   await jobDetailsPage.clickSave();
 
+  logger.logStep("Step 10: Check that 'Saved jobs' element has '1' in it");
   try {
-    const savedCount = await jobDetailsPage.getSavedJobsCount();
-    logger.logAssertion(`Assert saved jobs counter displays ${jobData.expectedCount}`);
-    expect(savedCount).toBe(jobData.expectedCount);
+    const count = await jobDetailsPage.getSavedJobsCount();
+    logger.logAssertion(`Assert saved jobs counter shows ${jobData.expectedCount}`);
+    expect(count).toBe(jobData.expectedCount);
   } catch (error) {
     logger.error(`Saved jobs counter assertion failed: ${error.message}`);
     throw error;
   }
 
-  logger.logStep('Open saved jobs panel');
-  await jobDetailsPage.clickSavedJobsLink();
+  logger.logStep("Step 11: Click on 'Saved jobs' element");
+  await jobDetailsPage.clickSavedJobsButton();
 
+  logger.logStep(`Step 12: Check that the job title in 'Saved jobs' contains '${activeKeyword}'`);
   try {
-    const savedJobTitle = (await savedJobsPage.getFirstSavedJobTitle()).trim();
-    logger.logAssertion(`Assert saved job title contains ${activeKeyword}`);
-    expect(savedJobTitle).toContain(activeKeyword);
+    const savedTitle = (await savedJobsPage.getFirstSavedJobTitle()).trim();
+    logger.logAssertion(`Assert saved job title contains '${activeKeyword}'`);
+    expect(savedTitle).toContain(activeKeyword);
   } catch (error) {
     logger.error(`Saved job title assertion failed: ${error.message}`);
     throw error;

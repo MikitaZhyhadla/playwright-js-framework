@@ -1,25 +1,37 @@
-class JobSearchPage {
+const BasePage = require('./BasePage');
+
+class JobSearchPage extends BasePage {
   constructor(page, logger) {
-    this.page = page;
-    this.logger = logger;
+    super(page, logger);
+    // CSS class selector — search form container
     this.searchForm = page.locator('form.search-form--home');
+    // CSS attribute selector — keyword input by name
     this.keywordInput = this.searchForm.locator('input[name="k"]');
+    // CSS attribute selector — location/postcode input by name
     this.locationInput = this.searchForm.locator('input[name="l"]');
+    // CSS :visible pseudo-class — search button scoped to form
     this.searchButton = this.searchForm.locator('button:has-text("Search jobs"):visible').first();
+    // Text matcher — no results indicator
     this.noResultsText = page.getByText(/No jobs found|0 jobs/i, { exact: false });
+    // CSS class selector — job result links
     this.jobListLinks = page.locator('a.job-list__anchor');
-    this.genericJobLinks = page.locator('a[href*="/job/"]');
-    this.firstCategoryLink = page.locator('a.vertical-tab-to-accordion__tile-link-arrow').first();
   }
 
-  async searchJobs(keyword) {
-    this.logger.logAction(`Searching jobs with keyword: ${keyword}`);
+  async fillKeyword(keyword) {
+    this.logger.logAction(`Filling keyword input with: ${keyword}`);
     await this.keywordInput.waitFor({ state: 'visible', timeout: 15000 });
-    await this.locationInput.waitFor({ state: 'visible', timeout: 15000 });
-    await this.searchButton.waitFor({ state: 'visible', timeout: 15000 });
     await this.keywordInput.fill(keyword);
+  }
+
+  async clearLocation() {
+    this.logger.logAction('Clearing location/postcode field');
+    await this.locationInput.waitFor({ state: 'visible', timeout: 15000 });
     await this.locationInput.fill('');
-    await this.page.waitForTimeout(500);
+  }
+
+  async clickSearch() {
+    this.logger.logAction('Clicking Search jobs button');
+    await this.searchButton.waitFor({ state: 'visible', timeout: 15000 });
     await Promise.all([
       this.page.waitForLoadState('networkidle'),
       this.searchButton.click(),
@@ -28,7 +40,7 @@ class JobSearchPage {
   }
 
   async waitForResults() {
-    this.logger.logAction(`Waiting for job search results to load at ${this.page.url()}`);
+    this.logger.logAction(`Waiting for search results at ${this.page.url()}`);
     await Promise.race([
       this.page.waitForSelector('a.job-list__anchor', { timeout: 20000 }).catch(() => null),
       this.page.waitForSelector('a[href*="/job/"]', { timeout: 20000 }).catch(() => null),
@@ -44,28 +56,24 @@ class JobSearchPage {
   }
 
   async clickFirstJob() {
-    this.logger.logAction('Clicking the first available job in search results');
-    const visibleJobLink = this.page.locator('a.job-list__anchor:visible').first();
-    const visibleGenericJobLink = this.page.locator('a[href*="/job/"]:visible').first();
-    const visibleCategoryLink = this.page.locator('a.vertical-tab-to-accordion__tile-link-arrow:visible').first();
+    this.logger.logAction('Clicking first job in search results');
     const jobCount = await this.page.locator('a.job-list__anchor:visible').count();
     const genericCount = await this.page.locator('a[href*="/job/"]:visible').count();
     const categoryCount = await this.page.locator('a.vertical-tab-to-accordion__tile-link-arrow:visible').count();
-    this.logger.logAction(`Search results page has ${jobCount} visible job links, ${genericCount} visible generic links, and ${categoryCount} visible category cards`);
+    this.logger.logAction(`Found ${jobCount} job links, ${genericCount} generic links, ${categoryCount} category cards`);
 
     if (jobCount > 0) {
-      await visibleJobLink.click();
+      await this.page.locator('a.job-list__anchor:visible').first().click();
       return;
     }
-
     if (genericCount > 0) {
-      await visibleGenericJobLink.click();
+      await this.page.locator('a[href*="/job/"]:visible').first().click();
       return;
     }
-
     if (categoryCount > 0) {
-      await visibleCategoryLink.scrollIntoViewIfNeeded();
-      await visibleCategoryLink.click();
+      const categoryLink = this.page.locator('a.vertical-tab-to-accordion__tile-link-arrow:visible').first();
+      await categoryLink.scrollIntoViewIfNeeded();
+      await categoryLink.click();
       await this.page.waitForLoadState('domcontentloaded');
       await this.page.waitForTimeout(3000);
       const nextJobCount = await this.page.locator('a.job-list__anchor:visible').count();
@@ -75,9 +83,7 @@ class JobSearchPage {
       }
     }
 
-    const currentUrl = this.page.url();
-    this.logger.logAction(`No clickable job elements found at ${currentUrl}`);
-    throw new Error('Unable to find a first job or category to click');
+    throw new Error(`No clickable job elements found at ${this.page.url()}`);
   }
 }
 
