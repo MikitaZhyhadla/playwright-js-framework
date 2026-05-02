@@ -14,8 +14,7 @@ class BasePage {
     await this.page.waitForLoadState('networkidle');
   }
 
-  async clickElement(locator, name) {
-    this.logger.logAction(`Clicking ${name}`);
+  async clickElement(locator) {
     await locator.click();
   }
 }

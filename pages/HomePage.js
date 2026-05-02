@@ -13,7 +13,7 @@ class HomePage extends BasePage {
 
   async clickJobsTab() {
     this.logger.logAction('Clicking Jobs navigation tab');
-    await this.clickElement(this.jobsTab, 'Jobs tab');
+    await this.clickElement(this.jobsTab);
   }
 }
 

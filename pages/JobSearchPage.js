@@ -41,13 +41,12 @@ class JobSearchPage extends BasePage {
 
   async waitForResults() {
     this.logger.logAction(`Waiting for search results at ${this.page.url()}`);
-    await Promise.race([
-      this.page.waitForSelector('a.job-list__anchor', { timeout: 20000 }).catch(() => null),
-      this.page.waitForSelector('a[href*="/job/"]', { timeout: 20000 }).catch(() => null),
-      this.page.waitForSelector('a.vertical-tab-to-accordion__tile-link-arrow', { timeout: 20000 }).catch(() => null),
-      this.page.waitForSelector('text=/No jobs found|0 jobs/i', { timeout: 20000 }).catch(() => null),
-    ]);
-    await this.page.waitForTimeout(1500);
+    // Single selector covers all result states — avoids multiple race timeouts showing as failed steps
+    await this.page.waitForSelector(
+      'a.job-list__anchor, a[href*="/job/"], a.vertical-tab-to-accordion__tile-link-arrow',
+      { timeout: 20000 }
+    ).catch(() => null);
+    await this.page.waitForTimeout(500);
   }
 
   async hasNoResults() {

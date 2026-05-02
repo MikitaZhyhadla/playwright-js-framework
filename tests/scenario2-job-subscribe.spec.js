@@ -58,8 +58,8 @@ test('Scenario 2: Subscribe for a job alert on IKEA careers portal', async ({ pa
   logger.logStep('Assert confirmation message is displayed');
   try {
     const confirmationText = await jobSubscribePage.getConfirmationText();
-    logger.logAssertion('Assert confirmation message is not empty');
-    expect(confirmationText).toBeTruthy();
+    logger.logAssertion('Assert confirmation message contains "submitted successfully"');
+    expect(confirmationText).toContain('submitted successfully');
     logger.logAction(`Confirmation message: "${confirmationText}"`);
   } catch (error) {
     logger.error(`Confirmation message assertion failed: ${error.message}`);

@@ -24,10 +24,9 @@ class CookieHelper {
       }
     }
 
-    const jobsConsentDialog = this.page.locator('dialog, [role="dialog"], #system-ialert');
-    await jobsConsentDialog.first().waitFor({ state: 'attached', timeout: 5000 }).catch(() => null);
+    // Check without waiting — avoids 5s timeout showing as a failed step in the report
     const acceptButton = this.page.getByRole('button', { name: /^Accept$/i }).first();
-    if (await acceptButton.count() && await acceptButton.isVisible()) {
+    if (await acceptButton.count() > 0 && await acceptButton.isVisible()) {
       this.logger.logAction('Closing jobs portal cookie consent dialog');
       await acceptButton.click();
       await this.page.waitForTimeout(500);

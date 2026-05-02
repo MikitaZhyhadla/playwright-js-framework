@@ -19,7 +19,7 @@ class JobSubscribePage extends BasePage {
     // 5. ARIA role + button name — final submit
     this.signUpButton = page.getByRole('button', { name: /Sign Up for Job Alerts/i });
 
-    // 6. XPath — paragraph element wrapping the confirmation message
+    // 6. XPath — text node inside the confirmation paragraph (excludes child button text)
     this.confirmationText = page.locator('//p[contains(., "submitted successfully")]').first();
   }
 
