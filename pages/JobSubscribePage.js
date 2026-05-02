@@ -19,13 +19,8 @@ class JobSubscribePage extends BasePage {
     // 5. ARIA role + button name — final submit
     this.signUpButton = page.getByRole('button', { name: /Sign Up for Job Alerts/i });
 
-    // 6. XPath — success/confirmation wrapper after form submit
-    this.confirmationContainer = page.locator(
-      '//*[contains(@class,"success") or contains(@class,"confirmation") or contains(@class,"alert--success")]'
-    ).first();
-
-    // 7. Visible text — matches the actual IKEA confirmation: "Your subscription was submitted successfully."
-    this.confirmationText = page.getByText(/submitted successfully|subscription was submitted/i).first();
+    // 6. XPath — paragraph element wrapping the confirmation message
+    this.confirmationText = page.locator('//p[contains(., "submitted successfully")]').first();
   }
 
   async scrollToSubscriptionBlock() {
@@ -80,18 +75,10 @@ class JobSubscribePage extends BasePage {
 
   async getConfirmationText() {
     this.logger.logAction('Waiting for confirmation message after sign-up');
-    try {
-      await this.confirmationContainer.waitFor({ state: 'visible', timeout: 15000 });
-      const text = await this.confirmationContainer.textContent();
-      this.logger.logAction(`Confirmation container text: "${text.trim()}"`);
-      return text.trim();
-    } catch {
-      this.logger.logAction('CSS confirmation not found — falling back to text-based locator');
-      await this.confirmationText.waitFor({ state: 'visible', timeout: 10000 });
-      const text = await this.confirmationText.textContent();
-      this.logger.logAction(`Confirmation text found: "${text.trim()}"`);
-      return text.trim();
-    }
+    await this.confirmationText.waitFor({ state: 'visible', timeout: 15000 });
+    const text = await this.confirmationText.textContent();
+    this.logger.logAction(`Confirmation message: "${text.trim()}"`);
+    return text.trim();
   }
 }
 
