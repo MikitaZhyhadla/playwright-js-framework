@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   homeUrl: 'https://www.ikea.com/',
   primaryKeyword: 'Manager',
   fallbackKeyword: 'Designer',

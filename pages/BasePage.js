@@ -1,16 +1,13 @@
-class BasePage {
-  constructor(page, logger) {
+export default class BasePage {
+  constructor(page) {
     this.page = page;
-    this.logger = logger;
   }
 
   async navigate(url) {
-    this.logger.logAction(`Navigating to ${url}`);
     await this.page.goto(url, { waitUntil: 'domcontentloaded' });
   }
 
   async waitForLoad() {
-    this.logger.logAction('Waiting for page load to complete');
     await this.page.waitForLoadState('networkidle');
   }
 
@@ -18,5 +15,3 @@ class BasePage {
     await locator.click();
   }
 }
-
-module.exports = BasePage;

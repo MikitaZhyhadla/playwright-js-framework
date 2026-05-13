@@ -1,11 +1,8 @@
 // @ts-check
-require('dotenv').config();
-const { defineConfig, devices } = require('@playwright/test');
+import 'dotenv/config';
+import { defineConfig, devices } from '@playwright/test';
 
-/**
- * @see https://playwright.dev/docs/test-configuration
- */
-module.exports = defineConfig({
+export default defineConfig({
   testDir: './tests',
   timeout: 60000,
   fullyParallel: true,
@@ -35,4 +32,3 @@ module.exports = defineConfig({
     },
   ],
 });
-

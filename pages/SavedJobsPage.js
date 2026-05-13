@@ -1,17 +1,13 @@
-const BasePage = require('./BasePage');
+import BasePage from './BasePage.js';
 
-class SavedJobsPage extends BasePage {
-  constructor(page, logger) {
-    super(page, logger);
-    // XPath — first anchor with the saved job title class inside the dropdown panel
+export default class SavedJobsPage extends BasePage {
+  constructor(page) {
+    super(page);
     this.firstSavedJobTitle = page.locator('//a[contains(@class, "saved-jobs-dropdown__jobtitle")][1]');
   }
 
   async getFirstSavedJobTitle() {
-    this.logger.logAction('Retrieving first saved job title from panel');
     await this.firstSavedJobTitle.waitFor({ state: 'visible', timeout: 10000 });
     return this.firstSavedJobTitle.textContent();
   }
 }
-
-module.exports = SavedJobsPage;

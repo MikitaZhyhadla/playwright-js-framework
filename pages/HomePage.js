@@ -1,9 +1,8 @@
-const BasePage = require('./BasePage');
+import BasePage from './BasePage.js';
 
-class HomePage extends BasePage {
-  constructor(page, logger) {
-    super(page, logger);
-    // ARIA role + accessible name — Jobs link in the main navigation
+export default class HomePage extends BasePage {
+  constructor(page) {
+    super(page);
     this.jobsTab = page.getByRole('link', { name: /Jobs/i });
   }
 
@@ -12,9 +11,6 @@ class HomePage extends BasePage {
   }
 
   async clickJobsTab() {
-    this.logger.logAction('Clicking Jobs navigation tab');
     await this.clickElement(this.jobsTab);
   }
 }
-
-module.exports = HomePage;

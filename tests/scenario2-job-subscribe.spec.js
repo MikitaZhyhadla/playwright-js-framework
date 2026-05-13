@@ -1,68 +1,45 @@
-const { test, expect } = require('@playwright/test');
-const Logger = require('../utils/logger');
-const CookieHelper = require('../helpers/cookieHelper');
-const MailHelper = require('../helpers/mailHelper');
-const subscribeData = require('../test-data/jobSubscribe');
-const HomePage = require('../pages/HomePage');
-const JobsLandingPage = require('../pages/JobsLandingPage');
-const JobSubscribePage = require('../pages/JobSubscribePage');
+import { test, expect } from '@playwright/test';
+import CookieHelper from '../helpers/cookieHelper.js';
+import subscribeData from '../test-data/jobSubscribe.js';
+import HomePage from '../pages/HomePage.js';
+import JobsLandingPage from '../pages/JobsLandingPage.js';
+import JobSubscribePage from '../pages/JobSubscribePage.js';
 
 test('Scenario 2: Subscribe for a job alert on IKEA careers portal', async ({ page }) => {
-  const logger = new Logger();
-  const cookieHelper = new CookieHelper(page, logger);
-  const homePage = new HomePage(page, logger);
-  const jobsLandingPage = new JobsLandingPage(page, logger);
-  const jobSubscribePage = new JobSubscribePage(page, logger);
+  const cookieHelper = new CookieHelper(page);
+  const homePage = new HomePage(page);
+  const jobsLandingPage = new JobsLandingPage(page);
+  const jobSubscribePage = new JobSubscribePage(page);
 
-  logger.logStep('Generate unique test email for this run');
-  const email = MailHelper.generateUniqueEmail(subscribeData.emailPrefix);
-  logger.logAction(`Generated email: ${email}`);
+  const email = subscribeData.generateEmail(subscribeData.emailPrefix);
 
-  logger.logStep('Open IKEA home page');
-  await homePage.open(subscribeData.homeUrl);
-  await cookieHelper.acceptCookies();
+  await test.step('Open IKEA home page', async () => {
+    await homePage.open(subscribeData.homeUrl);
+    await cookieHelper.acceptCookies();
+  });
 
-  logger.logStep('Click the Jobs navigation tab');
-  await homePage.clickJobsTab();
-  await cookieHelper.acceptCookies();
+  await test.step('Navigate to job search page via Jobs tab and Explore jobs', async () => {
+    await homePage.clickJobsTab();
+    await cookieHelper.acceptCookies();
+    await jobsLandingPage.clickExploreJobs();
+    await cookieHelper.acceptCookies();
+  });
 
-  logger.logStep('Click Explore available jobs');
-  await jobsLandingPage.clickExploreJobs();
-  await cookieHelper.acceptCookies();
+  await test.step('Fill in email and verify it was entered correctly', async () => {
+    await jobSubscribePage.scrollToSubscriptionBlock();
+    await jobSubscribePage.fillEmail(email);
+    expect(await jobSubscribePage.emailInput.inputValue()).toBe(email);
+  });
 
-  logger.logStep('Scroll to subscription block and fill email');
-  await jobSubscribePage.scrollToSubscriptionBlock();
-  await jobSubscribePage.fillEmail(email);
+  await test.step(`Select category "${subscribeData.category}", fill in location "${subscribeData.location}" and add alert`, async () => {
+    await jobSubscribePage.selectCategory(subscribeData.category);
+    await jobSubscribePage.fillLocationAndSelect(subscribeData.location);
+    await jobSubscribePage.clickAddAlert();
+  });
 
-  try {
-    const filledValue = await jobSubscribePage.emailInput.inputValue();
-    logger.logAssertion('Assert email field contains the generated email');
-    expect(filledValue).toBe(email);
-  } catch (error) {
-    logger.error(`Email input assertion failed: ${error.message}`);
-    throw error;
-  }
-
-  logger.logStep(`Select category: ${subscribeData.category}`);
-  await jobSubscribePage.selectCategory(subscribeData.category);
-
-  logger.logStep(`Fill location and pick from suggestions: ${subscribeData.location}`);
-  await jobSubscribePage.fillLocationAndSelect(subscribeData.location);
-
-  logger.logStep('Click Add Job Alert to confirm category and location selection');
-  await jobSubscribePage.clickAddAlert();
-
-  logger.logStep('Click Sign Up button');
-  await jobSubscribePage.clickSignUp();
-
-  logger.logStep('Assert confirmation message is displayed');
-  try {
+  await test.step('Sign up and verify confirmation message is shown', async () => {
+    await jobSubscribePage.clickSignUp();
     const confirmationText = await jobSubscribePage.getConfirmationText();
-    logger.logAssertion('Assert confirmation message contains "submitted successfully"');
     expect(confirmationText).toContain('submitted successfully');
-    logger.logAction(`Confirmation message: "${confirmationText}"`);
-  } catch (error) {
-    logger.error(`Confirmation message assertion failed: ${error.message}`);
-    throw error;
-  }
+  });
 });
